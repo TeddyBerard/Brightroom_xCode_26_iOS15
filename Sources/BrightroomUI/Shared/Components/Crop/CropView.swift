@@ -402,25 +402,26 @@ public final class CropView: UIView, UIScrollViewDelegate {
 
         // To restore current crop from editing-stack
         editingStack.sinkState { [weak self] state in
-
-          guard let self = self else { return }
-
-          if let loaded = state.mapIfPresent(\.loadedState) {
-
-            loaded.ifChanged(\.imageForCrop).do { image in
-              self.setImage(image)
+            Task { @MainActor in
+                
+                guard let self = self else { return }
+                
+                if let loaded = state.mapIfPresent(\.loadedState) {
+                    
+                    loaded.ifChanged(\.imageForCrop).do { image in
+                        self.setImage(image)
+                    }
+                    
+                    loaded.ifChanged(\.currentEdit.crop).do { crop in
+                        self.setCrop(loaded.currentEdit.crop)
+                    }
+                    
+                }
+                
+                state.ifChanged(\.isLoading).do { isLoading in
+                    self.updateLoadingState(displays: isLoading)
+                }
             }
-
-            loaded.ifChanged(\.currentEdit.crop).do { crop in
-              self.setCrop(loaded.currentEdit.crop)
-            }
-
-          }
-
-          state.ifChanged(\.isLoading).do { isLoading in
-            self.updateLoadingState(displays: isLoading)
-          }
-
         }
         .store(in: &subscriptions)
       }
